@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Upload via Link</title>
+</head>
+<body>
+    <h2>Upload via Link</h2>
+    <form action="/transcribe/" method="post">
+        {% csrf_token %}
+        <input type="text" name="youtube_link" placeholder="Enter YouTube Video Link" class="youtube-input">
+        <button type="submit">Submit Link</button>
+    </form>
+
+    <style>
+        .youtube-input {
+            width: 100%; /* Full-width of the container */
+            max-width: 500px; /* Maximum width */
+        }
+    </style>
+</body>
+</html>

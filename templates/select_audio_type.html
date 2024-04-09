@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Select Audio Submission Type</title>
+</head>
+<body>
+    <h2>Select Audio Submission Type</h2>
+    <div>
+        <button onclick="location.href='{% url 'create_recording' %}'">Create New Recording</button>
+        <button onclick="location.href='{% url 'upload_file' %}'">Upload via File</button>
+        <button onclick="location.href='{% url 'upload_link' %}'">Upload via Link</button>
+    </div>
+</body>
+</html>

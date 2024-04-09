@@ -164,3 +164,11 @@ node_modules/
 # Serverless directories
 .serverless/
 /data/
+
+# Validated audio
+validate/
+validate.csv
+
+# Testing videos
+videos/
+*.mp4

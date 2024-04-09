@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Create New Recording</title>
+    <style>
+        #toggleRecord, #submitRecording {
+            margin-right: 10px; /* Adds space to the right of each button */
+        }
+
+        #audioPlayback {
+            display: none; /* Initially hidden */
+            margin-top: 10px; /* Adds space above the audio playback control */
+        }
+    </style>
+</head>
+<body>
+    <h2>Create New Recording</h2>
+    <button id="toggleRecord">Start Recording</button>
+    <button id="submitRecording" disabled>Submit Recording</button>
+    <audio id="audioPlayback" controls style="display:none;"></audio>
+    <div id="transcriptionResult"></div>
+
+    <script>
+        let mediaRecorder;
+        let audioChunks = [];
+        let isRecording = false;
+
+        const toggleRecordButton = document.getElementById("toggleRecord");
+        const audioPlayback = document.getElementById("audioPlayback");
+        const submitRecording = document.getElementById("submitRecording");
+
+        toggleRecordButton.addEventListener("click", function() {
+            if (!isRecording) {
+                navigator.mediaDevices.getUserMedia({ audio: true })
+                    .then(stream => {
+                        mediaRecorder = new MediaRecorder(stream);
+                        audioChunks = [];
+
+                        mediaRecorder.ondataavailable = event => {
+                            audioChunks.push(event.data);
+                        };
+
+                        mediaRecorder.onstop = () => {
+                            const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                            audioPlayback.src = URL.createObjectURL(audioBlob);
+                            audioPlayback.style.display = "block"; // Show the playback control
+                            submitRecording.disabled = false; // Enable the submit button
+                            mediaRecorder.stream.getTracks().forEach(track => track.stop()); // Release the mic
+                        };
+
+                        mediaRecorder.start();
+                        isRecording = true;
+                        toggleRecordButton.textContent = 'Stop Recording';
+                    })
+                    .catch(error => console.error("Error accessing media devices:", error));
+            } else {
+                mediaRecorder.stop(); // Triggers the onstop event
+                isRecording = false;
+                toggleRecordButton.textContent = 'Start Recording';
+            }
+        });
+
+        submitRecording.addEventListener("click", function() {
+            const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+            const formData = new FormData();
+            formData.append("audio_file", audioBlob, "recording.wav");
+
+            fetch("/transcribe/", { method: "POST", body: formData })
+                .then(response => response.text())
+                .then(data => {
+                    document.getElementById("transcriptionResult").innerText = data;
+                })
+                .catch(error => console.error("Error:", error));
+
+            // Optionally, reset the UI for a new recording
+            audioPlayback.style.display = "none";
+            submitRecording.disabled = true;
+        });
+    </script>
+</body>
+</html>

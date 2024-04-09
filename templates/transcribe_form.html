@@ -1,61 +1,14 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Audio Submission</title>
+    <title>Transcription Result</title>
 </head>
 <body>
-    <!-- Audio file upload form -->
-    <form id="uploadForm" action="/transcribe/" method="post" enctype="multipart/form-data">
-        {% csrf_token %}
-        <input type="file" name="audio_file" accept="audio/*">
-        <button type="submit">Submit Audio File</button>
-    </form>
-
-    <!-- Audio recording controls -->
-    <div>
-        <button id="startRecord">Start Recording</button>
-        <button id="stopRecord" disabled>Stop Recording</button>
+    <h2>Transcription Result</h2>
+    <div id="transcriptionResult">
+        <!-- The transcription result will be displayed here -->
+        {{ transcription_text }}
     </div>
-
-    <script>
-        let mediaRecorder;
-        let audioChunks = [];
-
-        const startRecordButton = document.getElementById("startRecord");
-        const stopRecordButton = document.getElementById("stopRecord");
-
-        startRecordButton.onclick = function() {
-            navigator.mediaDevices.getUserMedia({ audio: true })
-                .then(stream => {
-                    mediaRecorder = new MediaRecorder(stream);
-                    mediaRecorder.ondataavailable = event => {
-                        audioChunks.push(event.data);
-                    };
-                    mediaRecorder.onstop = () => {
-                        const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-                        const formData = new FormData();
-                        formData.append("audio_file", audioBlob, "recording.wav");
-
-                        fetch("/transcribe/", { method: "POST", body: formData })
-                            .then(response => response.text())
-                            .then(data => alert(data))
-                            .catch(error => console.error("Error:", error));
-
-                        audioChunks = [];
-                        startRecordButton.disabled = false; // Re-enable the start record button
-                    };
-                    mediaRecorder.start();
-                    audioChunks = [];
-                    stopRecordButton.disabled = false; // Enable the stop record button
-                    startRecordButton.disabled = true; // Disable the start record button
-                });
-        };
-
-        stopRecordButton.onclick = function() {
-            mediaRecorder.stop();
-            mediaRecorder.stream.getTracks().forEach(track => track.stop()); // Stop the media stream tracks
-            stopRecordButton.disabled = true; // Disable the stop record button
-        };
-    </script>
+    <a href="{% url 'select_audio_type' %}">Submit another audio</a>
 </body>
 </html>
