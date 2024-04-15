@@ -3,13 +3,13 @@ from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from pytube import YouTube
 from openai import OpenAI
-import openai
 import os
 import csv
 import tempfile
 
 # Initialize the OpenAI client with your API key
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+client = OpenAI()
+# client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 def select_audio_type(request):
     return render(request, 'select_audio_type.html')
@@ -67,11 +67,9 @@ def transcribe_audio_file(audio_file):
     return transcription.text
 
 def analyze_text_with_chatgpt(text):
-    response = openai.Completion.create(
-        engine="text-davinci-002",  # or another suitable model like "davinci-codex"
-        prompt=generate_prompt(text),
-        max_tokens=50
-    )
+    response = client.completions.create(model="gpt-3.5-turbo-instruct",
+    prompt=generate_prompt(text),
+    max_tokens=50)
     safety_score = response.choices[0].text.strip()
     return safety_score
 
@@ -80,7 +78,8 @@ def generate_prompt(text):
         "Please analyze the following text to determine how appropriate it is for a political social media "
         "platform that prohibits hate speech, harassment, bullying, or any form of disruptive or offensive content. "
         "Provide a safety score where 0% indicates completely inappropriate (NSFW) content and 100% indicates "
-        "completely appropriate (SFW) content.\n\n"
+        "completely appropriate (SFW) content. Your response should only contain a whole number inclusively between "
+        "0 and 100 followed by a % symbol\n\n"
         f"Text: \"{text}\""
     )
 
