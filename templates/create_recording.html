@@ -23,12 +23,15 @@
 </head>
 <body>
     <h2>Create New Recording</h2>
-    <div id="controls">
-        <button id="toggleRecord">Start Recording</button>
-        <button id="submitRecording" disabled>Submit Recording</button>
-        <audio id="audioPlayback" controls></audio>
-    </div>
-    <div id="transcriptionResult"></div>
+    <form id="audioUploadForm" action="/transcribe/" method="post" enctype="multipart/form-data">
+        <div id="controls">
+            <button type="button" id="toggleRecord">Start Recording</button>
+            <button type="button" id="submitRecording" disabled>Submit Recording</button>
+            <audio id="audioPlayback" controls style="display:none;"></audio>
+        </div>
+        <input type="file" id="audioDataInput" name="audio_file" style="display:none;">
+        <div id="transcriptionResult"></div>
+    </form>
 
     <script>
         let mediaRecorder;
@@ -38,6 +41,8 @@
         const toggleRecordButton = document.getElementById("toggleRecord");
         const audioPlayback = document.getElementById("audioPlayback");
         const submitRecording = document.getElementById("submitRecording");
+        const audioDataInput = document.getElementById("audioDataInput");
+        const audioUploadForm = document.getElementById("audioUploadForm");
 
         toggleRecordButton.addEventListener("click", function() {
             if (!isRecording) {
@@ -52,10 +57,16 @@
 
                         mediaRecorder.onstop = () => {
                             const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                            const audioFile = new File([audioBlob], "recording.wav", { type: 'audio/wav' });
                             audioPlayback.src = URL.createObjectURL(audioBlob);
-                            audioPlayback.style.display = "block"; // Show the playback control
-                            submitRecording.disabled = false; // Enable the submit button
-                            mediaRecorder.stream.getTracks().forEach(track => track.stop()); // Release the mic
+                            audioPlayback.style.display = "block";
+
+                            let dataTransfer = new DataTransfer();
+                            dataTransfer.items.add(audioFile);
+                            audioDataInput.files = dataTransfer.files;
+                            submitRecording.disabled = false;
+
+                            mediaRecorder.stream.getTracks().forEach(track => track.stop());
                         };
 
                         mediaRecorder.start();
@@ -64,35 +75,15 @@
                     })
                     .catch(error => console.error("Error accessing media devices:", error));
             } else {
-                mediaRecorder.stop(); // Triggers the onstop event
+                mediaRecorder.stop();
                 isRecording = false;
                 toggleRecordButton.textContent = 'Start Recording';
             }
         });
 
         submitRecording.addEventListener("click", function() {
-            const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-            const formData = new FormData();
-            formData.append("audio_file", audioBlob, "recording.wav");
-
-            fetch("/transcribe/", { method: "POST", body: formData })
-                .then(response => response.text())
-                .then(data => {
-                    document.getElementById("transcriptionResult").innerText = data;
-                })
-                .catch(error => console.error("Error:", error));
-
-            // Stop the audio playback and reset it
-            if (!audioPlayback.paused) {
-                audioPlayback.pause(); // Pause the audio playback
-                audioPlayback.currentTime = 0; // Reset the playback position to the start
-            }
-
-            // Optionally, reset the UI for a new recording
-            audioPlayback.style.display = "none";
-            submitRecording.disabled = true;
+            audioUploadForm.submit();
         });
     </script>
-
 </body>
 </html>
